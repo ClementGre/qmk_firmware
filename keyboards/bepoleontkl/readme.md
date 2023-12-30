@@ -1,4 +1,4 @@
-# bepoleontkl
+qmk clean -a# bepoleontkl
 
 ![bepoleontkl](imgur.com image replace me!)
 
