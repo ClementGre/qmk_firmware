@@ -172,13 +172,16 @@ uint8_t         oled_scroll_start_2   = 0;
 uint8_t         oled_scroll_end_2     = 7;
 
 #if OLED_TIMEOUT > 0
-uint32_t oled_timeout;
+uint32_t oled_timeout_1;
+uint32_t oled_timeout_2;
 #endif
 #if OLED_SCROLL_TIMEOUT > 0
-uint32_t oled_scroll_timeout;
+uint32_t oled_scroll_timeout_1;
+uint32_t oled_scroll_timeout_2;
 #endif
 #if OLED_UPDATE_INTERVAL > 0
-uint16_t oled_update_timeout;
+uint16_t oled_update_timeout_1;
+uint16_t oled_update_timeout_2;
 #endif
 
 #if defined(OLED_TRANSPORT_SPI)
@@ -386,10 +389,18 @@ bool oled_init(bool screen, oled_rotation_t rotation) {
     }
 
 #if OLED_TIMEOUT > 0
-    oled_timeout = timer_read32() + OLED_TIMEOUT;
+    if(screen){
+        oled_timeout_2 = timer_read32() + OLED_TIMEOUT;
+    }else{
+        oled_timeout_1 = timer_read32() + OLED_TIMEOUT;
+    }
 #endif
 #if OLED_SCROLL_TIMEOUT > 0
-    oled_scroll_timeout = timer_read32() + OLED_SCROLL_TIMEOUT;
+    if(screen){
+        oled_scroll_timeout_2 = timer_read32() + OLED_SCROLL_TIMEOUT;
+    }else{
+        oled_scroll_timeout_1 = timer_read32() + OLED_SCROLL_TIMEOUT;
+    }
 #endif
 
     oled_clear(screen);
@@ -414,13 +425,13 @@ __attribute__((weak)) oled_rotation_t oled_init_user(bool screen, oled_rotation_
 
 void oled_clear(bool screen) {
     if (screen) {
-        memset(oled_buffer_1, 0, sizeof(oled_buffer_1));
-        oled_cursor_1 = &oled_buffer_1[0];
-        oled_dirty_1  = OLED_ALL_BLOCKS_MASK;
-    } else {
         memset(oled_buffer_2, 0, sizeof(oled_buffer_2));
         oled_cursor_2 = &oled_buffer_2[0];
         oled_dirty_2  = OLED_ALL_BLOCKS_MASK;
+    } else {
+        memset(oled_buffer_1, 0, sizeof(oled_buffer_2));
+        oled_cursor_1 = &oled_buffer_1[0];
+        oled_dirty_1  = OLED_ALL_BLOCKS_MASK;
     }
 }
 
@@ -979,7 +990,10 @@ bool oled_on(bool screen) {
     }
 
 #if OLED_TIMEOUT > 0
-    oled_timeout = timer_read32() + OLED_TIMEOUT;
+    if (screen)
+        oled_timeout_2 = timer_read32() + OLED_TIMEOUT;
+    else
+        oled_timeout_1 = timer_read32() + OLED_TIMEOUT;
 #endif
 
     static const uint8_t PROGMEM display_on[] =
@@ -1328,11 +1342,11 @@ void oled_task(bool screen) {
     // Display timeout check
 #if OLED_TIMEOUT > 0
     if (screen){
-        if (oled_active_2 && timer_expired32(timer_read32(), oled_timeout)) {
+        if (oled_active_2 && timer_expired32(timer_read32(), oled_timeout_2)) {
             oled_off(screen);
         }
     }else{
-        if (oled_active_1 && timer_expired32(timer_read32(), oled_timeout)) {
+        if (oled_active_1 && timer_expired32(timer_read32(), oled_timeout_1)) {
             oled_off(screen);
         }
     }
