@@ -214,6 +214,74 @@ i2c_status_t i2c_readReg16(uint8_t devaddr, uint16_t regaddr, uint8_t* data, uin
     return i2c_epilogue(status);
 }
 
+// Added functions to support multiple I2C drivers
+i2c_status_t i2c_start_driver(I2CDriver* driver, uint8_t address) {
+    i2c_address = address;
+    i2cStart(driver, &i2cconfig);
+    return I2C_STATUS_SUCCESS;
+}
+
+i2c_status_t i2c_transmit_driver(I2CDriver* driver, uint8_t address, const uint8_t* data, uint16_t length, uint16_t timeout) {
+    i2c_address = address;
+    i2cStart(driver, &i2cconfig);
+    msg_t status = i2cMasterTransmitTimeout(driver, (i2c_address >> 1), data, length, 0, 0, TIME_MS2I(timeout));
+    return i2c_epilogue(status);
+}
+
+i2c_status_t i2c_receive_driver(I2CDriver* driver, uint8_t address, uint8_t* data, uint16_t length, uint16_t timeout) {
+    i2c_address = address;
+    i2cStart(driver, &i2cconfig);
+    msg_t status = i2cMasterReceiveTimeout(driver, (i2c_address >> 1), data, length, TIME_MS2I(timeout));
+    return i2c_epilogue(status);
+}
+
+i2c_status_t i2c_writeReg_driver(I2CDriver* driver, uint8_t devaddr, uint8_t regaddr, const uint8_t* data, uint16_t length, uint16_t timeout) {
+    i2c_address = devaddr;
+    i2cStart(driver, &i2cconfig);
+
+    uint8_t complete_packet[length + 1];
+    for (uint16_t i = 0; i < length; i++) {
+        complete_packet[i + 1] = data[i];
+    }
+    complete_packet[0] = regaddr;
+
+    msg_t status = i2cMasterTransmitTimeout(driver, (i2c_address >> 1), complete_packet, length + 1, 0, 0, TIME_MS2I(timeout));
+    return i2c_epilogue(status);
+}
+
+i2c_status_t i2c_writeReg16_driver(I2CDriver* driver, uint8_t devaddr, uint16_t regaddr, const uint8_t* data, uint16_t length, uint16_t timeout) {
+    i2c_address = devaddr;
+    i2cStart(driver, &i2cconfig);
+
+    uint8_t complete_packet[length + 2];
+    for (uint16_t i = 0; i < length; i++) {
+        complete_packet[i + 2] = data[i];
+    }
+    complete_packet[0] = regaddr >> 8;
+    complete_packet[1] = regaddr & 0xFF;
+
+    msg_t status = i2cMasterTransmitTimeout(driver, (i2c_address >> 1), complete_packet, length + 2, 0, 0, TIME_MS2I(timeout));
+    return i2c_epilogue(status);
+}
+
+i2c_status_t i2c_readReg_driver(I2CDriver* driver, uint8_t devaddr, uint8_t regaddr, uint8_t* data, uint16_t length, uint16_t timeout) {
+    i2c_address = devaddr;
+    i2cStart(driver, &i2cconfig);
+    msg_t status = i2cMasterTransmitTimeout(driver, (i2c_address >> 1), &regaddr, 1, data, length, TIME_MS2I(timeout));
+    return i2c_epilogue(status);
+}
+
+i2c_status_t i2c_readReg16_driver(I2CDriver* driver, uint8_t devaddr, uint16_t regaddr, uint8_t* data, uint16_t length, uint16_t timeout) {
+    i2c_address = devaddr;
+    i2cStart(driver, &i2cconfig);
+    uint8_t register_packet[2] = {regaddr >> 8, regaddr & 0xFF};
+    msg_t   status             = i2cMasterTransmitTimeout(driver, (i2c_address >> 1), register_packet, 2, data, length, TIME_MS2I(timeout));
+    return i2c_epilogue(status);
+}
+
 void i2c_stop(void) {
     i2cStop(&I2C_DRIVER);
+}
+void i2c_stop_driver(I2CDriver* driver) {
+    i2cStop(driver);
 }
