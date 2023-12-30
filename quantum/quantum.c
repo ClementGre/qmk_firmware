@@ -538,7 +538,8 @@ void suspend_power_down_quantum(void) {
 #    endif
 
 #    ifdef OLED_ENABLE
-    oled_off();
+    oled_off(true);
+    oled_off(false);
 #    endif
 #    ifdef ST7565_ENABLE
     st7565_off();

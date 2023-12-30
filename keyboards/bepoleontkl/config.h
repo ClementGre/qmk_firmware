@@ -7,3 +7,6 @@
 #define I2C2_SDA_PIN B11
 
 #define I2C_DRIVER I2CD1
+
+#define OLED_FADE_OUT
+#define OLED_FADE_OUT_INTERVAL 5

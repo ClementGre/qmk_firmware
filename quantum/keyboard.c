@@ -416,7 +416,8 @@ void keyboard_init(void) {
     crc_init();
 #endif
 #ifdef OLED_ENABLE
-    oled_init(OLED_ROTATION_0);
+    oled_init(false, OLED_ROTATION_0);
+    oled_init(true, OLED_ROTATION_0);
 #endif
 #ifdef ST7565_ENABLE
     st7565_init(DISPLAY_ROTATION_0);
@@ -677,10 +678,12 @@ void keyboard_task(void) {
 #endif
 
 #ifdef OLED_ENABLE
-    oled_task();
+    oled_task(false);
+    oled_task(true);
 #    if OLED_TIMEOUT > 0
     // Wake up oled if user is using those fabulous keys or spinning those encoders!
-    if (activity_has_occurred) oled_on();
+    if (activity_has_occurred) oled_on(false);
+    if (activity_has_occurred) oled_on(true);
 #    endif
 #endif
 
