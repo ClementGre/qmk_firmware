@@ -1,10 +1,30 @@
 #include "quantum.h"
 #include "bepoleontkl.h"
 #include "oled.h"
+#include "os_detection.h"
 
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
     if (keycode == KC_ESC) {
         reset_keyboard();
+    }
+
+    if(detected_host_os() == OS_MACOS){
+        // invert KC_NUBS and KC_GRV
+        if(keycode == KC_NUBS){
+            if(record->event.pressed){
+                register_code(KC_GRV);
+            } else {
+                unregister_code(KC_GRV);
+            }
+            return false;
+        } else if(keycode == KC_GRV){
+            if(record->event.pressed){
+                register_code(KC_NUBS);
+            } else {
+                unregister_code(KC_NUBS);
+            }
+            return false;
+        }
     }
 
 #ifdef CONSOLE_ENABLE
@@ -19,6 +39,10 @@ bool shutdown_kb(bool jump_to_bootloader) {
     }
     oled_render_boot(jump_to_bootloader);
     return true;
+}
+
+void suspend_power_down_kb(void) {
+    oled_idling();
 }
 
 
@@ -50,4 +74,15 @@ bool encoder_update_kb(uint8_t index, bool clockwise) {
         }
     }
     return true;
+}
+
+void raw_hid_receive(uint8_t *data, uint8_t length) {
+    // [0] : 0x00 = Screen1, 0x01 = Spotify with song title, 0x02 = Spotify with singer, 0x03 = Perfs
+    if(data[0] == 0x01 || data[0] == 0x02) {
+        render_spotify(data);
+    } else if(data[0] == 0x03) {
+        render_perfs(data);
+    } else {
+        render_screen_1();
+    }
 }
