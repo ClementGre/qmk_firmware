@@ -2,23 +2,20 @@
 #include "bepoleontkl.h"
 #include "oled.h"
 #include "os_detection.h"
+#include "keymap_bepo.h"
 
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
-    if (keycode == KC_ESC) {
-        reset_keyboard();
-    }
-
-    if(detected_host_os() == OS_MACOS){
-        // invert KC_NUBS and KC_GRV
-        if(keycode == KC_NUBS){
-            if(record->event.pressed){
+    // invert KC_NUBS and KC_GRV on MacOS
+    if (detected_host_os() == OS_MACOS) {
+        if (keycode == KC_NUBS) {
+            if (record->event.pressed) {
                 register_code(KC_GRV);
             } else {
                 unregister_code(KC_GRV);
             }
             return false;
-        } else if(keycode == KC_GRV){
-            if(record->event.pressed){
+        } else if (keycode == KC_GRV) {
+            if (record->event.pressed) {
                 register_code(KC_NUBS);
             } else {
                 unregister_code(KC_NUBS);
@@ -45,7 +42,24 @@ void suspend_power_down_kb(void) {
     oled_idling();
 }
 
-
+void encoder_up(void) {
+    if (get_mods() & MOD_MASK_SHIFT) {
+        brightness_up();
+    } else if (get_mods() & MOD_MASK_CTRL) {
+        tap_code(KC_BRIU);
+    } else {
+        tap_code(KC_VOLU);
+    }
+}
+void encoder_down(void) {
+    if (get_mods() & MOD_MASK_SHIFT) {
+        brightness_down();
+    } else if (get_mods() & MOD_MASK_CTRL) {
+        tap_code(KC_BRID);
+    } else {
+        tap_code(KC_VOLD);
+    }
+}
 bool skip_encoder0 = false;
 bool skip_encoder1 = true;
 bool encoder_update_kb(uint8_t index, bool clockwise) {
@@ -58,9 +72,9 @@ bool encoder_update_kb(uint8_t index, bool clockwise) {
             return true;
         }
         if (clockwise) {
-            tap_code(KC_VOLU);
+            encoder_down();
         } else {
-            tap_code(KC_VOLD);
+            encoder_up();
         }
     } else if (index == 1) { /* Second encoder */
         skip_encoder1 = !skip_encoder1;
@@ -68,9 +82,9 @@ bool encoder_update_kb(uint8_t index, bool clockwise) {
             return true;
         }
         if (clockwise) {
-            tap_code(KC_VOLU);
+            encoder_down();
         } else {
-            tap_code(KC_VOLD);
+            encoder_up();
         }
     }
     return true;
@@ -78,11 +92,23 @@ bool encoder_update_kb(uint8_t index, bool clockwise) {
 
 void raw_hid_receive(uint8_t *data, uint8_t length) {
     // [0] : 0x00 = Screen1, 0x01 = Spotify with song title, 0x02 = Spotify with singer, 0x03 = Perfs
-    if(data[0] == 0x01 || data[0] == 0x02) {
+    if (data[0] == 0x01 || data[0] == 0x02) {
         render_spotify(data);
-    } else if(data[0] == 0x03) {
+    } else if (data[0] == 0x03) {
         render_perfs(data);
     } else {
         render_screen_1();
+    }
+}
+
+void leader_start_user(void) {
+    oled_start_leader();
+}
+
+void leader_end_user(void) {
+    if (leader_sequence_two_keys(BP_B, BP_O)) {
+        reset_keyboard();
+    } else if (leader_sequence_two_keys(BP_E, BP_C)) {
+        eeconfig_init();
     }
 }

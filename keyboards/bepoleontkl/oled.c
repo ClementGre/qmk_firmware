@@ -104,7 +104,7 @@ void render_spotify(uint8_t *data) {
 
     oled_set_cursor(true, 0, invert_positions ? 3 : 0);
 
-    if (update_text || last_progress != data[1] || last_liked != (data[2] == 0x01) || last_shuffle != (data[3] == 0x01)){
+    if (update_text || last_progress != data[1] || last_liked != (data[2] == 0x01) || last_shuffle != (data[3] == 0x01)) {
         oled_scroll_off(true);
 
         last_progress = data[1];
@@ -177,8 +177,8 @@ void render_perfs(uint8_t *data) {
     char cpu_str1[10];
     sprintf(cpu_str1, "CPU: %d.", data[1]);
     oled_write(true, cpu_str1, false);
-    char cpu_str2[6];
-    sprintf(cpu_str2, "%d %%", data[2]);
+    char cpu_str2[8];
+    sprintf(cpu_str2, "%d %%  ", data[2]);
     oled_write(true, cpu_str2, false);
 
     oled_set_cursor(true, 13, 0);
@@ -201,8 +201,8 @@ void render_perfs(uint8_t *data) {
     char ram_str1[10];
     sprintf(ram_str1, "RAM: %d.", data[5]);
     oled_write(true, ram_str1, false);
-    char ram_str2[6];
-    sprintf(ram_str2, "%d %%", data[6]);
+    char ram_str2[8];
+    sprintf(ram_str2, "%d %%  ", data[6]);
     oled_write(true, ram_str2, false);
 
     oled_set_cursor(true, 14, 1);
@@ -241,12 +241,12 @@ void render_screen_1(void) {
     uint8_t wpm = get_current_wpm();
     char    buf[9];
     snprintf(buf, 9, "WPM: %d", wpm);
-    oled_write(false, buf, false);
+    // oled_write(false, buf, false);
 
     oled_advance_page(false, true);
 
     oled_scroll_set_area(false, 0, 2);
-    oled_scroll_left(false);
+    // oled_scroll_left(false);
     //        char str[5];
     //        sprintf(str, "%ld", counter);
     //        write_1(PSTR(str), false);
@@ -260,24 +260,6 @@ void render_screen_1(void) {
         oled_set_brightness(false, led_state.caps_lock ? 255 : 128);
         oled_set_brightness(true, led_state.caps_lock ? 255 : 128);
     }
-}
-void render_screen_2(void) {
-    static bool init = false;
-    if (init) {
-        int r = rand() / (RAND_MAX / 100);
-        printf("r: %d\n", r);
-        int r2 = rand();
-        printf("r2: %d\n", r2);
-        if (r == 1) oled_pan(true, true);
-
-        oled_write(true, "Wicked Games (Feat the) - Piera For Cuva", false);
-        return;
-    }
-
-    oled_write(true, "Wicked Games (Feat the) - Piera For Cuva", false);
-    oled_advance_page(true, true);
-    oled_write(true, "Wicked Games (Feat the) - Piera For Cuva", false);
-    init = true;
 }
 
 bool oled_task_kb(bool screen) {
@@ -295,6 +277,7 @@ bool oled_task_kb(bool screen) {
     }
     return true;
 }
+void oled_start_leader(void) {}
 
 void oled_render_boot(bool bootloader) {
     printf("oled_render_boot\n");
@@ -315,4 +298,21 @@ void oled_render_boot(bool bootloader) {
     }
     oled_render_dirty(false, true);
     oled_render_dirty(true, true);
+}
+
+static uint8_t brightness = 0;
+
+void brightness_up(void) {
+    brightness = oled_get_brightness(true);
+    brightness += 5;
+    if (brightness > 255) brightness = 255;
+    oled_set_brightness(true, brightness);
+    oled_set_brightness(false, brightness);
+}
+void brightness_down(void) {
+    brightness = oled_get_brightness(true);
+    brightness -= 5;
+    if (brightness < 0) brightness = 0;
+    oled_set_brightness(true, brightness);
+    oled_set_brightness(false, brightness);
 }
