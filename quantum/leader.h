@@ -11,6 +11,10 @@
  * \{
  */
 
+uint16_t leader_sequence[5];
+uint8_t leader_sequence_size;
+
+
 /**
  * \brief User callback, invoked when the leader sequence begins.
  */

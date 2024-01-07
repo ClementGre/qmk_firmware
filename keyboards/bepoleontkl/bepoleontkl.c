@@ -1,6 +1,7 @@
 #include "quantum.h"
 #include "bepoleontkl.h"
 #include "oled.h"
+#include "keycode_to_string.h"
 #include "os_detection.h"
 #include "keymap_bepo.h"
 
@@ -102,13 +103,17 @@ void raw_hid_receive(uint8_t *data, uint8_t length) {
 }
 
 void leader_start_user(void) {
-    oled_start_leader();
 }
 
 void leader_end_user(void) {
+    printf("Leader sequence received\n");
     if (leader_sequence_two_keys(BP_B, BP_O)) {
         reset_keyboard();
     } else if (leader_sequence_two_keys(BP_E, BP_C)) {
         eeconfig_init();
+    }else if (leader_sequence_three_keys(BP_O, BP_O, KC_1)) {
+        swap_disable_screen(false);
+    }else if (leader_sequence_three_keys(BP_O, BP_O, KC_2)) {
+        swap_disable_screen(true);
     }
 }

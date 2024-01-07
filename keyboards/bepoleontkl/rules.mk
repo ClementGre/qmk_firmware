@@ -11,5 +11,9 @@ OS_DETECTION_ENABLE = yes
 LEADER_ENABLE = yes
 KEY_OVERRIDE_ENABLE = yes
 COMBO_ENABLE = yes
+COMMAND_ENABLE = yes
+NKRO_ENABLE = yes
+
 
 SRC += oled.c
+SRC += keycode_to_string.c

@@ -1027,8 +1027,7 @@ bool oled_on(bool screen) {
 bool oled_off(bool screen) {
     if (screen && !oled_initialized_2) {
         return !oled_active_2;
-    }
-    if (!screen && !oled_initialized_1) {
+    }else if (!screen && !oled_initialized_1) {
         return !oled_active_1;
     }
 
@@ -1040,7 +1039,7 @@ bool oled_off(bool screen) {
 #endif
 
     if (screen){
-        if (!oled_active_2) {
+        if (oled_active_2) {
             if (!oled_send_cmd_P(screen, display_off, ARRAY_SIZE(display_off))) {
                 print("oled_off cmd failed\n");
                 return oled_active_2;
@@ -1049,7 +1048,7 @@ bool oled_off(bool screen) {
         }
         return !oled_active_2;
     }else{
-        if (!oled_active_1) {
+        if (oled_active_1) {
             if (!oled_send_cmd_P(screen, display_off, ARRAY_SIZE(display_off))) {
                 print("oled_off cmd failed\n");
                 return oled_active_1;
