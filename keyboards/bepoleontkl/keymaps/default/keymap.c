@@ -26,6 +26,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
         )
 };
 
+
 const uint16_t PROGMEM combo_bootl[] = {KC_SPC, KC_ENT, BP_B, COMBO_END};
 const uint16_t PROGMEM combo_eeinit[] = {KC_SPC, KC_ENT, BP_E, COMBO_END};
 const uint16_t PROGMEM combo_lead[] = {KC_LSFT, KC_RSFT, COMBO_END};
