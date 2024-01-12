@@ -4,25 +4,49 @@
 #include "keycode_to_string.h"
 #include "os_detection.h"
 #include "keymap_bepo.h"
+//#include "keymap.h"
 
+bool insert_enabled = false;
+bool is_insert_enabled(void) {
+    return insert_enabled;
+}
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
-    // invert KC_NUBS and KC_GRV on MacOS
-    if (detected_host_os() == OS_MACOS) {
-        if (keycode == KC_NUBS) {
+    switch (keycode) {
+        case KC_INSERT:
             if (record->event.pressed) {
-                register_code(KC_GRV);
-            } else {
-                unregister_code(KC_GRV);
+                insert_enabled = !insert_enabled;
             }
-            return false;
-        } else if (keycode == KC_GRV) {
+            break ;
+        case M_SPS:
             if (record->event.pressed) {
-                register_code(KC_NUBS);
-            } else {
-                unregister_code(KC_NUBS);
+                // TODO
             }
-            return false;
-        }
+            break ;
+        case M_CPS:
+            if (record->event.pressed) {
+                // TODO
+            }
+            break ;
+        case KC_NUBS: // invert KC_NUBS and KC_GRV on MacOS
+            if (detected_host_os() == OS_MACOS) {
+                if (record->event.pressed) {
+                    register_code(KC_GRV);
+                } else {
+                    unregister_code(KC_GRV);
+                }
+                return false;
+            }
+            break ;
+        case KC_GRV: // invert KC_NUBS and KC_GRV on MacOS
+            if (detected_host_os() == OS_MACOS) {
+                if (record->event.pressed) {
+                    register_code(KC_NUBS);
+                } else {
+                    unregister_code(KC_NUBS);
+                }
+                return false;
+            }
+            break ;
     }
 
 #ifdef CONSOLE_ENABLE

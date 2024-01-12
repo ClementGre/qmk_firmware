@@ -2,6 +2,7 @@
 #include "quantum.h"
 #include "keycode_to_string.h"
 #include "i2c_master.h"
+#include "bepoleontkl.h"
 #include <time.h>
 #include <stdlib.h>
 
@@ -38,9 +39,9 @@ enum screen2s last_screen2s = NONE;
 
 /* ********************* *
  * LS <================>            (Music bar over 18 chars)
- * MUSIC (scroll)
- * SONG (scroll)
- *                                  (Pull everything down half of the time for burn in)
+ *
+ *  MUSIC (scroll)
+ * SONG (scroll)                    (Inverting lines for furn in)
  * ********************* */
 void render_spotify(uint8_t *data) {
     if (screen2_disabled) return;
@@ -141,10 +142,10 @@ void render_spotify(uint8_t *data) {
 }
 
 /* ********************* *
- * CPU: 89.5%    67.6 °C            (Invert these lines and alignment for burn in)
+ * CPU: 89.5%    67.6 °C            (Invert text/graph for burn in)
  * MEM: 40%      12.3 GB
  *    /-----\__
- *---/         \__------            (3x loads over 21*10 = 3.5 last minutes)
+ *---/         \__------            (Graph over 1 minute, variable min/max)
  * ********************* */
 static uint8_t cpu_graph_min = 255;
 static uint8_t cpu_graph_max = 0;
@@ -299,12 +300,6 @@ void render_perfs(uint8_t *data) {
     oled_write(true, str2, false);
 }
 
-/* ********************* *
- * 00:00:00     00:00:00            (Time and Time since boot)
- *
- * XX XX XX                         (Alternate wpm lines)
- * XX XX XX      106 wpm            (CAPS, INSERT, SCROLL)
- * ********************* */
 void print_4chars_icon(uint8_t root, uint8_t x, uint8_t y) {
     oled_set_cursor(false, x, y);
     oled_write(false, (const char[]){root, root + 1, 0x00}, false);
@@ -317,6 +312,13 @@ void empty_4chars_icon(uint8_t x, uint8_t y) {
     oled_set_cursor(false, x, y + 1);
     oled_write(false, "  ", false);
 }
+
+/* ********************* *
+ * 1.25K/1.34M  00:00:00            (Keypress since boot/since ever - Time since boot)
+ *
+ * AG CA SC IN                      (Alternate wpm lines)
+ * SC PS LO SE   106 wpm            (CAPS, INSERT, SCROLL)
+ * ********************* */
 void render_screen_1(void) {
     if (screen1_disabled) return;
     static bool init = false;
@@ -342,28 +344,54 @@ void render_screen_1(void) {
     oled_set_cursor(false, 0, 2);
 
     if (leader_sequence_active()) {
-        oled_write(false, "Leader", false);
+        oled_write(false, "Leader     ", false);
         oled_set_cursor(false, 0, 3);
-        oled_write(false, ":", false);
+        oled_write(false, ":          ", false);
+        oled_set_cursor(false, 1, 3);
         for (uint8_t i = 0; i < leader_sequence_size; i++) {
             char *str = keycode_to_string(leader_sequence[i]);
             oled_write(false, str, false);
         }
     } else {
+        // Current modifiers status
+        if (get_mods() & MOD_BIT(KC_LALT))
+            oled_write(false, (const char[]){0x9D}, false);
+        else
+            oled_write(false, " ", false);
+        if (get_mods() & MOD_BIT(KC_RALT))
+            oled_write(false, (const char[]){0x9E}, false);
+        else
+            oled_write(false, " ", false);
+
+        oled_set_cursor(false, 0, 3);
+        if (get_mods() & MOD_MASK_SHIFT)
+            oled_write(false, (const char[]){0x9F}, false);
+        else
+            oled_write(false, " ", false);
+        if (get_mods() & MOD_MASK_CTRL)
+            oled_write(false, (const char[]){0x10}, false);
+        else
+            oled_write(false, " ", false);
+
         led_t led_state = host_keyboard_led_state();
         if (led_state.caps_lock)
-            print_4chars_icon(0x97, 0, 2);
+            print_4chars_icon(0x97, 3, 2);
         else
-            empty_4chars_icon(0, 2);
+            empty_4chars_icon(3, 2);
         if (led_state.scroll_lock)
-            print_4chars_icon(0x99, 2, 2);
+            print_4chars_icon(0x99, 6, 2);
         else
-            empty_4chars_icon(2, 2);
+            empty_4chars_icon(6, 2);
+
+        if (is_insert_enabled())
+            print_4chars_icon(0x9B, 9, 3);
+        else
+            empty_4chars_icon(9, 3);
     }
     oled_set_cursor(false, 12, 3);
     uint8_t wpm = get_current_wpm();
-    char    wpm_str[9];
-    snprintf(wpm_str, 9, "WPM: %d", wpm);
+    char    wpm_str[8];
+    snprintf(wpm_str, 8, "%d wpm", wpm);
     oled_write(false, wpm_str, false);
 }
 

@@ -3,6 +3,13 @@
 
 #pragma once
 
+bool is_insert_enabled(void);
+
+enum custom_keycodes {
+    M_SPS = QK_KB_0,
+    M_CPS
+};
+
 /*
  * Feature disable options
  *  These options are also useful to firmware size reduction.
