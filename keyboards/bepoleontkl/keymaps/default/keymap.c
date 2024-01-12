@@ -29,13 +29,30 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 
 const uint16_t PROGMEM combo_bootl[] = {KC_SPC, KC_ENT, BP_B, COMBO_END};
 const uint16_t PROGMEM combo_eeinit[] = {KC_SPC, KC_ENT, BP_E, COMBO_END};
-const uint16_t PROGMEM combo_lead[] = {KC_LSFT, KC_RSFT, COMBO_END};
 combo_t key_combos[] = {
     COMBO(combo_bootl, QK_BOOT),
     COMBO(combo_eeinit, EE_CLR),
-    COMBO(combo_lead, QK_LEAD),
 };
 
 void suspend_power_down_user(void) {
     oled_idling();
+}
+
+bool caps_word_press_user(uint16_t keycode) {
+    switch (keycode) {
+        case KC_A ... KC_Z:
+        case KC_1 ... KC_0:
+        case KC_MINS:
+            add_weak_mods(MOD_BIT(KC_LSFT));  // Apply shift to next key.
+            return true;
+
+        case KC_BSPC:
+        case KC_DEL:
+            return true;
+        case KC_SPC:
+            if(get_mods() == MOD_BIT(KC_RALT)) return true;
+
+        default:
+            return false;  // Deactivate Caps Word.
+    }
 }

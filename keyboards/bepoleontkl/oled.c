@@ -36,6 +36,8 @@ void i2c_init(void) {
 
 enum screen2s { NONE, SPOTIFY, PERFS };
 enum screen2s last_screen2s = NONE;
+static uint16_t counter      = 0;
+
 
 /* ********************* *
  * LS <================>            (Music bar over 18 chars)
@@ -64,6 +66,9 @@ void render_spotify(uint8_t *data) {
         memset(last_song, 0, sizeof(last_song));
         memset(last_singer, 0, sizeof(last_singer));
     }
+
+    counter += 1;
+    printf("SPOTIFY: counter: %d, time: %d\n", counter, timer_elapsed(timer));
 
     // Song name/Singer
     uint8_t content_text[22]; // 25 - 4 + 1 = 22 elements in the subarray
@@ -149,7 +154,8 @@ void render_spotify(uint8_t *data) {
  * ********************* */
 static uint8_t cpu_graph_min = 255;
 static uint8_t cpu_graph_max = 0;
-uint8_t        value_on_min_max(uint8_t val) {
+
+uint8_t value_on_min_max(uint8_t val) {
     return (uint8_t)(((uint16_t)(val - cpu_graph_min)) * 16 / (uint16_t)(cpu_graph_max - cpu_graph_min));
 }
 void render_perfs(uint8_t *data) {
@@ -396,8 +402,10 @@ void render_screen_1(void) {
 }
 
 static bool s2_initial_render = true;
+
 bool        oled_task_kb(bool screen) {
     if (!screen) {
+        printf("CLOCK: %d\n", timer_elapsed(timer));
         render_screen_1();
     } else {
         if (screen2_disabled) return true;
