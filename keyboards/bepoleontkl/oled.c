@@ -5,6 +5,7 @@
 #include "bepoleontkl.h"
 #include <time.h>
 #include <stdlib.h>
+#include <math.h>
 
 static const char PROGMEM qmk_logo[] = {0x80, 0x81, 0x82, 0x83, 0x84, 0x85, 0x86, 0x87, 0x88, 0x89, 0x8A, 0x8B, 0x8C, 0x8D, 0x8E, 0x8F, 0x90, 0x91, 0x92, 0x93, 0x94, 0xA0, 0xA1, 0xA2, 0xA3, 0xA4, 0xA5, 0xA6, 0xA7, 0xA8, 0xA9, 0xAA, 0xAB, 0xAC, 0xAD, 0xAE, 0xAF, 0xB0, 0xB1, 0xB2, 0xB3, 0xB4, 0xC0, 0xC1, 0xC2, 0xC3, 0xC4, 0xC5, 0xC6, 0xC7, 0xC8, 0xC9, 0xCA, 0xCB, 0xCC, 0xCD, 0xCE, 0xCF, 0xD0, 0xD1, 0xD2, 0xD3, 0xD4, 0x00};
 static uint32_t           timer;
@@ -318,6 +319,53 @@ void empty_4chars_icon(uint8_t x, uint8_t y) {
     oled_write(false, "  ", false);
 }
 
+void write_formatted_number(uint32_t number) {
+    char    str[13];
+    uint8_t pos = 0;
+
+    //printf("write_formatted_number: %ld\n", number);
+    uint8_t dig_count = 1;
+    uint8_t dig0 = 0, dig1 = 0, dig2 = 0;
+
+    if (number < 10)
+        dig2 = number;
+    else if (number < 100) {
+        dig2 = number % 10;
+        dig1 = number / 10;
+    } else {
+        while (number >= 10) {
+            if (number < 100) {
+                dig1 = number % 10;
+            } else if (number < 1000) {
+                dig2 = number % 10;
+            }
+            number = number / 10;
+            dig_count += 1;
+        }
+        dig0 = number;
+    }
+
+    uint8_t comma = (dig_count <= 3) ? 0 : (dig_count % 3);
+    //printf("dig_count: %d, comma: %d, dig0: %d, dig1: %d, dig2: %d\n", dig_count, comma, dig0, dig1, dig2);
+
+    if (comma == 0) pos += sprintf(&str[pos], " ");
+    pos += sprintf(&str[pos], "%d", dig0);
+    if (comma == 1) pos += sprintf(&str[pos], ",");
+    pos += sprintf(&str[pos], "%d", dig1);
+    if (comma == 2) pos += sprintf(&str[pos], ",");
+    pos += sprintf(&str[pos], "%d", dig2);
+
+    if (dig_count <= 3)
+        sprintf(&str[pos], "  ");
+    else if (dig_count <= 6)
+        sprintf(&str[pos], "K ");
+    else if (dig_count <= 9)
+        sprintf(&str[pos], "M ");
+    else if (dig_count <= 12)
+        sprintf(&str[pos], "G ");
+
+    oled_write(false, str, false);
+}
 /* ********************* *
  * 1.25K/1.34M  00:00:00            (Keypress since boot/since ever - Time since boot)
  *
@@ -325,29 +373,41 @@ void empty_4chars_icon(uint8_t x, uint8_t y) {
  * SC PS LO SE   106 wpm            (CAPS, INSERT, SCROLL)
  * ********************* */
 void render_screen_1(void) {
-    static uint8_t s1_timer;
+    static uint16_t s1_timer;
     static bool    inverted = false;
+    static uint16_t key_timer;
+
     if (screen1_disabled) return;
     static bool init = false;
     if (!init) {
         init = true;
         oled_clear(false);
-        s1_timer = timer_read();
+        s1_timer  = timer_read();
+        key_timer = timer_read();
         return;
     }
     if (timer_elapsed(s1_timer) > 60000) {
         oled_clear(false);
         inverted = !inverted;
         s1_timer = timer_read();
+        return;
     }
     static bool last_leader_sequence_active = false;
-    if(last_leader_sequence_active != leader_sequence_active()) {
+    if (last_leader_sequence_active != leader_sequence_active()) {
         last_leader_sequence_active = leader_sequence_active();
         oled_clear(false);
+        return;
     }
 
     if (inverted) {
-        oled_set_cursor(false, 1, 0);
+        oled_set_cursor(false, 0, 1);
+    }
+
+    if (timer_elapsed(key_timer) > 50) {
+        key_timer = timer_read();
+        write_formatted_number(get_keystroke_all_count());
+        oled_write(false, (const char[]){0xD9, 0x00}, false);
+        write_formatted_number(get_keystroke_count());
     }
 
     uint32_t elapsed = timer_elapsed32(timer) / ((uint32_t)1000);
@@ -356,13 +416,13 @@ void render_screen_1(void) {
     uint8_t minutes = elapsed / 60;
     elapsed -= minutes * 60;
 
-    char    time[13];
+    char    time[12];
     uint8_t pos = 0;
     pos += sprintf(&time[pos], "%d", hours);
     pos += sprintf(&time[pos], ":%02d", minutes);
     sprintf(&time[pos], ":%02ld", elapsed);
 
-    oled_set_cursor(false, inverted ? 1 : 0, (hours < 10) ? 14 : ((hours < 100) ? 13 : 12));
+    oled_set_cursor(false, 12, (inverted ? 1 : 0));
     if (hours < 100) oled_write(false, hours < 10 ? "  " : " ", false);
     oled_write(false, time, false);
 
@@ -397,7 +457,7 @@ void render_screen_1(void) {
             oled_write(false, " ", false);
 
         led_t led_state = host_keyboard_led_state();
-        if(is_caps_word_on())
+        if (is_caps_word_on())
             print_4chars_icon(0x97, 3, 2);
         else
             empty_4chars_icon(3, 2);
@@ -416,7 +476,7 @@ void render_screen_1(void) {
     }
 
     uint8_t wpm = get_current_wpm();
-    oled_set_cursor(false, wpm < 10 ? 14 : (wpm < 100 ? 13 : 12), inverted ? 2 : 3);
+    oled_set_cursor(false, wpm < 10 ? 14 : (wpm < 100 ? 13 : 12), inverted ? 3 : 2);
     char wpm_str[10];
     snprintf(wpm_str, 10, "  %d wpm", wpm);
     oled_write(false, wpm_str, false);
@@ -510,4 +570,8 @@ void oled_idling() {
     oled_off(true);
     oled_off(false);
     last_screen2s = NONE;
+}
+void oled_wakeup() {
+    timer = timer_read32();
+    s2_initial_render = true;
 }

@@ -5,27 +5,37 @@
 #include "os_detection.h"
 #include "keymap_bepo.h"
 
+static uint32_t keystroke_count     = 0;
+static uint32_t keystroke_all_count = 0;
+
 bool insert_enabled = false;
 bool is_insert_enabled(void) {
     return insert_enabled;
 }
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
+    if(record->event.pressed) {
+        keystroke_count++;
+        keystroke_all_count++;
+        if(keystroke_all_count % 10000 == 0) {
+            save_keystroke_count();
+        }
+    }
     switch (keycode) {
         case KC_INSERT:
             if (record->event.pressed) {
                 insert_enabled = !insert_enabled;
             }
-            break ;
+            break;
         case M_SPS:
             if (record->event.pressed) {
                 // TODO
             }
-            break ;
+            break;
         case M_CPS:
             if (record->event.pressed) {
                 // TODO
             }
-            break ;
+            break;
         case KC_NUBS: // invert KC_NUBS and KC_GRV on MacOS
             if (detected_host_os() == OS_MACOS) {
                 if (record->event.pressed) {
@@ -35,7 +45,7 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
                 }
                 return false;
             }
-            break ;
+            break;
         case KC_GRV: // invert KC_NUBS and KC_GRV on MacOS
             if (detected_host_os() == OS_MACOS) {
                 if (record->event.pressed) {
@@ -45,7 +55,7 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
                 }
                 return false;
             }
-            break ;
+            break;
     }
 
 #ifdef CONSOLE_ENABLE
@@ -125,18 +135,34 @@ void raw_hid_receive(uint8_t *data, uint8_t length) {
     }
 }
 
-void leader_start_user(void) {
-}
+void leader_start_user(void) {}
 
 void leader_end_user(void) {
-    printf("Leader sequence received\n");
     if (leader_sequence_two_keys(BP_B, BP_O)) {
         reset_keyboard();
-    } else if (leader_sequence_two_keys(BP_E, BP_C)) {
-        eeconfig_init();
-    }else if (leader_sequence_three_keys(BP_O, BP_O, KC_1)) {
+    } else if (leader_sequence_one_key(KC_F8)) {
         swap_disable_screen(false);
-    }else if (leader_sequence_three_keys(BP_O, BP_O, KC_2)) {
+    } else if (leader_sequence_one_key(KC_F5)) {
         swap_disable_screen(true);
+    }else if (leader_sequence_two_keys(BP_S, BP_K)) {
+        save_keystroke_count();
+        keystroke_count = 0;
     }
+}
+
+void keyboard_post_init_kb(void) {
+    keystroke_all_count = eeconfig_read_kb();
+}
+void save_keystroke_count(void) {
+    eeconfig_update_kb(keystroke_all_count);
+}
+
+uint32_t get_keystroke_count(void) {
+    return keystroke_count;
+}
+uint32_t get_keystroke_all_count(void) {
+    return keystroke_all_count;
+}
+void reset_keystroke_count(void) {
+    keystroke_count = 0;
 }
