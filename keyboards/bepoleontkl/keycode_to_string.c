@@ -110,6 +110,30 @@ char *keycode_to_string(uint16_t key) {
             return "=";
         case BP_PERC:
             return "%";
+        case KC_F1:
+            return "F1";
+        case KC_F2:
+            return "F2";
+        case KC_F3:
+            return "F3";
+        case KC_F4:
+            return "F4";
+        case KC_F5:
+            return "F5";
+        case KC_F6:
+            return "F6";
+        case KC_F7:
+            return "F7";
+        case KC_F8:
+            return "F8";
+        case KC_F9:
+            return "F9";
+        case KC_F10:
+            return "F10";
+        case KC_F11:
+            return "F11";
+        case KC_F12:
+            return "F12";
     }
     return "!";
 }

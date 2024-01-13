@@ -4,7 +4,6 @@
 #include "keycode_to_string.h"
 #include "os_detection.h"
 #include "keymap_bepo.h"
-//#include "keymap.h"
 
 bool insert_enabled = false;
 bool is_insert_enabled(void) {

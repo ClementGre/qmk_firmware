@@ -35,9 +35,8 @@ void i2c_init(void) {
 }
 
 enum screen2s { NONE, SPOTIFY, PERFS };
-enum screen2s last_screen2s = NONE;
-static uint16_t counter      = 0;
-
+enum screen2s   last_screen2s = NONE;
+static uint16_t counter       = 0;
 
 /* ********************* *
  * LS <================>            (Music bar over 18 chars)
@@ -326,86 +325,107 @@ void empty_4chars_icon(uint8_t x, uint8_t y) {
  * SC PS LO SE   106 wpm            (CAPS, INSERT, SCROLL)
  * ********************* */
 void render_screen_1(void) {
+    static uint8_t s1_timer;
+    static bool    inverted = false;
     if (screen1_disabled) return;
     static bool init = false;
     if (!init) {
         init = true;
         oled_clear(false);
+        s1_timer = timer_read();
         return;
     }
+    if (timer_elapsed(s1_timer) > 60000) {
+        oled_clear(false);
+        inverted = !inverted;
+        s1_timer = timer_read();
+    }
+    static bool last_leader_sequence_active = false;
+    if(last_leader_sequence_active != leader_sequence_active()) {
+        last_leader_sequence_active = leader_sequence_active();
+        oled_clear(false);
+    }
 
-    uint32_t elapsed = timer_elapsed(timer) / 1000;
-    uint8_t  hours   = elapsed / 3600;
-    elapsed -= hours * 3600;
+    if (inverted) {
+        oled_set_cursor(false, 1, 0);
+    }
+
+    uint32_t elapsed = timer_elapsed32(timer) / ((uint32_t)1000);
+    uint8_t  hours   = (uint8_t)(elapsed / ((uint32_t)3600));
+    elapsed -= ((uint32_t)hours) * ((uint32_t)3600);
     uint8_t minutes = elapsed / 60;
     elapsed -= minutes * 60;
 
     char    time[13];
     uint8_t pos = 0;
-    pos += sprintf(&time[pos], "%02d", hours);
+    pos += sprintf(&time[pos], "%d", hours);
     pos += sprintf(&time[pos], ":%02d", minutes);
     sprintf(&time[pos], ":%02ld", elapsed);
+
+    oled_set_cursor(false, inverted ? 1 : 0, (hours < 10) ? 14 : ((hours < 100) ? 13 : 12));
+    if (hours < 100) oled_write(false, hours < 10 ? "  " : " ", false);
     oled_write(false, time, false);
 
     oled_set_cursor(false, 0, 2);
 
     if (leader_sequence_active()) {
-        oled_write(false, "Leader     ", false);
+        oled_write(false, "Leader", false);
         oled_set_cursor(false, 0, 3);
-        oled_write(false, ":          ", false);
-        oled_set_cursor(false, 1, 3);
+        oled_write(false, ":", false);
         for (uint8_t i = 0; i < leader_sequence_size; i++) {
             char *str = keycode_to_string(leader_sequence[i]);
             oled_write(false, str, false);
         }
     } else {
-        // Current modifiers status
         if (get_mods() & MOD_BIT(KC_LALT))
-            oled_write(false, (const char[]){0x9D}, false);
+            oled_write(false, (const char[]){0xD7, 0x00}, false);
         else
             oled_write(false, " ", false);
         if (get_mods() & MOD_BIT(KC_RALT))
-            oled_write(false, (const char[]){0x9E}, false);
+            oled_write(false, (const char[]){0xD6, 0x00}, false);
         else
             oled_write(false, " ", false);
 
         oled_set_cursor(false, 0, 3);
         if (get_mods() & MOD_MASK_SHIFT)
-            oled_write(false, (const char[]){0x9F}, false);
+            oled_write(false, (const char[]){0xD8, 0x00}, false);
         else
             oled_write(false, " ", false);
         if (get_mods() & MOD_MASK_CTRL)
-            oled_write(false, (const char[]){0x10}, false);
+            oled_write(false, (const char[]){0xD5, 0x00}, false);
         else
             oled_write(false, " ", false);
 
         led_t led_state = host_keyboard_led_state();
-        if (led_state.caps_lock)
+        if(is_caps_word_on())
             print_4chars_icon(0x97, 3, 2);
         else
             empty_4chars_icon(3, 2);
+        if (led_state.caps_lock)
+            print_4chars_icon(0x95, 5, 2);
+        else
+            empty_4chars_icon(5, 2);
         if (led_state.scroll_lock)
-            print_4chars_icon(0x99, 6, 2);
+            print_4chars_icon(0x99, 7, 2);
         else
-            empty_4chars_icon(6, 2);
-
+            empty_4chars_icon(7, 2);
         if (is_insert_enabled())
-            print_4chars_icon(0x9B, 9, 3);
+            print_4chars_icon(0x9B, 9, 2);
         else
-            empty_4chars_icon(9, 3);
+            empty_4chars_icon(9, 2);
     }
-    oled_set_cursor(false, 12, 3);
+
     uint8_t wpm = get_current_wpm();
-    char    wpm_str[8];
-    snprintf(wpm_str, 8, "%d wpm", wpm);
+    oled_set_cursor(false, wpm < 10 ? 14 : (wpm < 100 ? 13 : 12), inverted ? 2 : 3);
+    char wpm_str[10];
+    snprintf(wpm_str, 10, "  %d wpm", wpm);
     oled_write(false, wpm_str, false);
 }
 
 static bool s2_initial_render = true;
 
-bool        oled_task_kb(bool screen) {
+bool oled_task_kb(bool screen) {
     if (!screen) {
-        printf("CLOCK: %d\n", timer_elapsed(timer));
         render_screen_1();
     } else {
         if (screen2_disabled) return true;
