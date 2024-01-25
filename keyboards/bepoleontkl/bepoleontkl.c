@@ -12,7 +12,9 @@ bool insert_enabled = false;
 bool is_insert_enabled(void) {
     return insert_enabled;
 }
+uint8_t mods;
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
+    mods = get_mods();
     if(record->event.pressed) {
         keystroke_count++;
         keystroke_all_count++;
@@ -33,7 +35,15 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
             break;
         case M_CPS:
             if (record->event.pressed) {
-                // TODO
+                if (detected_host_os() == OS_WINDOWS) {
+                    // Perform Ctrl+Shift+F12 Up/Down instead
+                     if (record->event.pressed) {
+                        set_mods(MOD_BIT(KC_LCTL) | MOD_BIT(KC_LSFT));
+                        tap_code(KC_F12);
+                        set_mods(mods);
+                    }
+                    return false;
+                }
             }
             break;
         case KC_NUBS: // invert KC_NUBS and KC_GRV on MacOS
@@ -80,7 +90,12 @@ void encoder_up(void) {
     if (get_mods() & MOD_MASK_SHIFT) {
         brightness_up();
     } else if (get_mods() & MOD_MASK_CTRL) {
-        tap_code(KC_BRIU);
+        if(detected_host_os() == OS_WINDOWS){
+            set_mods(MOD_BIT(KC_LCTL) | MOD_BIT(KC_LSFT));
+            tap_code(KC_PGUP);
+            set_mods(mods);
+        }else
+            tap_code(KC_BRIU);
     } else {
         tap_code(KC_VOLU);
     }
@@ -89,7 +104,12 @@ void encoder_down(void) {
     if (get_mods() & MOD_MASK_SHIFT) {
         brightness_down();
     } else if (get_mods() & MOD_MASK_CTRL) {
-        tap_code(KC_BRID);
+        if(detected_host_os() == OS_WINDOWS){
+            set_mods(MOD_BIT(KC_LCTL) | MOD_BIT(KC_LSFT));
+            tap_code(KC_PGDN);
+            set_mods(mods);
+        }else
+            tap_code(KC_BRID);
     } else {
         tap_code(KC_VOLD);
     }
@@ -97,6 +117,7 @@ void encoder_down(void) {
 bool skip_encoder0 = false;
 bool skip_encoder1 = true;
 bool encoder_update_kb(uint8_t index, bool clockwise) {
+    mods = get_mods();
     if (!encoder_update_user(index, clockwise)) {
         return false; /* Don't process further events if user function exists and returns false */
     }
