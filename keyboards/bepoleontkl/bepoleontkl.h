@@ -15,6 +15,9 @@ uint32_t get_keystroke_all_count(void);
 void reset_keystroke_count(void);
 void save_keystroke_count(void);
 
+void send_spotify_control_command(uint8_t);
+void request_screens_update(void);
+
 /*
  * Feature disable options
  *  These options are also useful to firmware size reduction.

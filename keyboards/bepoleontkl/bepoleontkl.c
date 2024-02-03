@@ -4,6 +4,7 @@
 #include "keycode_to_string.h"
 #include "os_detection.h"
 #include "keymap_bepo.h"
+#include "raw_hid.h"
 
 static uint32_t keystroke_count     = 0;
 static uint32_t keystroke_all_count = 0;
@@ -27,22 +28,56 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
             if (record->event.pressed) {
                 insert_enabled = !insert_enabled;
             }
+            uint8_t data[32];
+            memset(data, 0, 32);
+            data[0] = 0x05;
+            raw_hid_send(data, 32);
             break;
         case M_SPS:
             if (record->event.pressed) {
-                // TODO
+                send_spotify_control_command(0x00);
             }
             break;
         case M_CPS:
             if (record->event.pressed) {
                 if (detected_host_os() == OS_WINDOWS) {
-                    // Perform Ctrl+Shift+F12 Up/Down instead
+                    // Perform Ctrl+Shift+F12 instead
                      if (record->event.pressed) {
                         set_mods(MOD_BIT(KC_LCTL) | MOD_BIT(KC_LSFT));
                         tap_code(KC_F12);
                         set_mods(mods);
                     }
                     return false;
+                }
+            }
+            break;
+        case KC_MNXT:
+            if (record->event.pressed) {
+                if(mods & MOD_MASK_CTRL){
+                    send_spotify_control_command(0x01);
+                    return false;
+                }else{
+                    request_screens_update();
+                }
+            }
+            break;
+        case KC_MPRV:
+            if (record->event.pressed) {
+                if(mods & MOD_MASK_CTRL){
+                    send_spotify_control_command(0x02);
+                    return false;
+                }else{
+                    request_screens_update();
+                }
+            }
+            break;
+        case KC_MPLY:
+            if (record->event.pressed) {
+                if(mods & MOD_MASK_CTRL){
+                    send_spotify_control_command(0x03);
+                    return false;
+                }else{
+                    request_screens_update();
                 }
             }
             break;
@@ -84,7 +119,13 @@ bool shutdown_kb(bool jump_to_bootloader) {
 
 void suspend_power_down_kb(void) {
     oled_idling();
+    reset_keystroke_count();
 }
+void suspend_wakeup_init_kb(void) {
+    oled_wakeup();
+}
+
+
 
 void encoder_up(void) {
     if (get_mods() & MOD_MASK_SHIFT) {
@@ -155,6 +196,21 @@ void raw_hid_receive(uint8_t *data, uint8_t length) {
         render_screen_1();
     }
 }
+void send_spotify_control_command(uint8_t command_id) {
+    // 0 : like, 1 : next, 2 : previous, 3 : play/pause
+    uint8_t data[32];
+    memset(data, 0, 32);
+    data[0] = 0x01;
+    data[1] = command_id;
+    raw_hid_send(data, 32);
+}
+void request_screens_update() {
+    uint8_t data[32];
+    memset(data, 0, 32);
+    data[0] = 0x00;
+    raw_hid_send(data, 32);
+}
+
 
 void leader_start_user(void) {}
 

@@ -22,14 +22,6 @@ combo_t                key_combos[]   = {
     COMBO(combo_bootl, QK_BOOT),
 };
 
-void suspend_power_down_user(void) {
-    oled_idling();
-    reset_keystroke_count();
-}
-void suspend_wakeup_init_user(void) {
-    oled_wakeup();
-}
-
 bool caps_word_press_user(uint16_t keycode) {
     switch (keycode) {
         case KC_1 ... KC_0:
