@@ -11,6 +11,7 @@ static const char PROGMEM qmk_logo[] = {0x80, 0x81, 0x82, 0x83, 0x84, 0x85, 0x86
 static uint32_t           timer;
 static bool               screen1_disabled = false;
 static bool               screen2_disabled = false;
+bool is_idling = false;
 
 #define I2C1_SCL_PAL_MODE 4
 #define I2C1_SDA_PAL_MODE 4
@@ -485,6 +486,8 @@ void render_screen_1(void) {
 static bool s2_initial_render = true;
 
 bool oled_task_kb(bool screen) {
+    if(is_idling) return false;
+
     if (!screen) {
         render_screen_1();
     } else {
@@ -562,16 +565,26 @@ void swap_disable_screen(bool screen) {
     }
 }
 void oled_idling() {
-    // no need to change oledx_disabled because oled task won't be called again until sleep is over
+    if (is_idling) return;
+    is_idling = true;
+
     oled_scroll_off(true);
     oled_scroll_off(false);
     oled_clear(true);
     oled_clear(false);
+    oled_render_dirty(false, true);
+    oled_render_dirty(true, true);
     oled_off(true);
     oled_off(false);
+
     last_screen2s = NONE;
 }
 void oled_wakeup() {
+    if (!is_idling) return;
+    is_idling = false;
+
     timer = timer_read32();
     s2_initial_render = true;
+    oled_task_kb(true);
+    oled_task_kb(false);
 }

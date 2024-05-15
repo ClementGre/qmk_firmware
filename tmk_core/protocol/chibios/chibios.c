@@ -197,6 +197,7 @@ void protocol_pre_task(void) {
         }
         /* Woken up */
         // variables has been already cleared by the wakeup hook
+        wait_ms(5000); // wait for the host to be ready
         send_keyboard_report();
 #    ifdef MOUSEKEY_ENABLE
         mousekey_send();
