@@ -15,10 +15,8 @@ COMMAND_ENABLE = yes
 NKRO_ENABLE = yes
 CAPS_WORD_ENABLE = yes
 PROGRAMMABLE_BUTTON_ENABLE = yes
-VIA_ENABLE = yes
 
 SRC += oled.c
 SRC += keycode_to_string.c
-
 
 LTO_ENABLE = yes

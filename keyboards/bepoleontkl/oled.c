@@ -9,6 +9,7 @@
 
 static const char PROGMEM qmk_logo[] = {0x80, 0x81, 0x82, 0x83, 0x84, 0x85, 0x86, 0x87, 0x88, 0x89, 0x8A, 0x8B, 0x8C, 0x8D, 0x8E, 0x8F, 0x90, 0x91, 0x92, 0x93, 0x94, 0xA0, 0xA1, 0xA2, 0xA3, 0xA4, 0xA5, 0xA6, 0xA7, 0xA8, 0xA9, 0xAA, 0xAB, 0xAC, 0xAD, 0xAE, 0xAF, 0xB0, 0xB1, 0xB2, 0xB3, 0xB4, 0xC0, 0xC1, 0xC2, 0xC3, 0xC4, 0xC5, 0xC6, 0xC7, 0xC8, 0xC9, 0xCA, 0xCB, 0xCC, 0xCD, 0xCE, 0xCF, 0xD0, 0xD1, 0xD2, 0xD3, 0xD4, 0x00};
 static uint32_t           timer;
+static uint32_t           desktop_call_timer;
 static bool               screen1_disabled = false;
 static bool               screen2_disabled = false;
 bool is_idling = false;
@@ -19,6 +20,7 @@ void i2c_init(void) {
     static bool is_initialised = false;
     if (!is_initialised) {
         timer          = timer_read32();
+        desktop_call_timer = timer_read32();
         is_initialised = true;
 
         // Try releasing special pins for a short time
@@ -48,6 +50,7 @@ static uint16_t counter       = 0;
  * ********************* */
 void render_spotify(uint8_t *data) {
     if (screen2_disabled) return;
+    desktop_call_timer = timer_read32();
     // [1] : filled blocked count (from 0 to 17)
     // [2] : Liked status (0x00 = not liked, 0x01 = liked)
     // [3] : Shuffle status (0x00 = not shuffling, 0x01 = shuffling)
@@ -161,6 +164,7 @@ uint8_t value_on_min_max(uint8_t val) {
 }
 void render_perfs(uint8_t *data) {
     if (screen2_disabled) return;
+    desktop_call_timer = timer_read32();
     // [1] : CPU % usage
     // [2] : CPU usage decimal (0 to 9)
     // [3] : CPU temperature (0 to 255)
@@ -499,7 +503,14 @@ bool oled_task_kb(bool screen) {
         render_screen_1();
     } else {
         if (screen2_disabled) return true;
+
         if (last_screen2s == SPOTIFY) oled_scroll_left(true);
+
+        if (timer_elapsed(desktop_call_timer) > 20000 && timer_elapsed(desktop_call_timer) < 25000) {
+            oled_scroll_off(true);
+            oled_clear(true);
+            return false;
+        }
 
         if (s2_initial_render) {
             oled_write(true, qmk_logo, false);
@@ -570,6 +581,7 @@ void swap_disable_screen(bool screen) {
         } else
             screen1_disabled = false;
     }
+    if(screen) desktop_call_timer = timer_read32();
 }
 void oled_idling() {
     if (is_idling) return;
@@ -589,6 +601,7 @@ void oled_idling() {
 void oled_wakeup() {
     if (!is_idling) return;
     is_idling = false;
+    desktop_call_timer = timer_read32();
 
     timer = timer_read32();
     s2_initial_render = true;

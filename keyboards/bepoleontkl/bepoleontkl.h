@@ -18,6 +18,8 @@ void save_keystroke_count(void);
 void send_spotify_control_command(uint8_t);
 void request_screens_update(void);
 
+void toggle_nkro(void);
+
 /*
  * Feature disable options
  *  These options are also useful to firmware size reduction.

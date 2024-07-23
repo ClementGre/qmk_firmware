@@ -5,6 +5,12 @@
 #include "os_detection.h"
 #include "keymap_bepo.h"
 #include "raw_hid.h"
+#include "leader.h"
+
+#ifdef NKRO_ENABLE
+#include "keycode_config.h"
+extern keymap_config_t keymap_config;
+#endif
 
 static uint32_t keystroke_count     = 0;
 static uint32_t keystroke_all_count = 0;
@@ -186,7 +192,7 @@ bool encoder_update_kb(uint8_t index, bool clockwise) {
     return true;
 }
 
-/*void raw_hid_receive(uint8_t *data, uint8_t length) {
+void raw_hid_receive(uint8_t *data, uint8_t length) {
     // [0] : 0x00 = Screen1, 0x01 = Spotify with song title, 0x02 = Spotify with singer, 0x03 = Perfs
     if (data[0] == 0x01 || data[0] == 0x02) {
         render_spotify(data);
@@ -195,7 +201,7 @@ bool encoder_update_kb(uint8_t index, bool clockwise) {
     } else {
         render_screen_1();
     }
-}*/
+}
 void send_spotify_control_command(uint8_t command_id) {
     // 0 : like, 1 : next, 2 : previous, 3 : play/pause
     uint8_t data[32];
@@ -214,6 +220,8 @@ void request_screens_update() {
 
 void leader_start_user(void) {}
 
+
+
 void leader_end_user(void) {
     if (leader_sequence_two_keys(BP_B, BP_O)) {
         reset_keyboard();
@@ -224,7 +232,23 @@ void leader_end_user(void) {
     }else if (leader_sequence_two_keys(BP_S, BP_K)) {
         save_keystroke_count();
         keystroke_count = 0;
+    } else if (leader_sequence_one_key(KC_F1)) {
+        toggle_nkro();
+    } else if (leader_sequence[0] == BP_EQL && leader_sequence_size > 1) {
+        keystroke_all_count = keycodes_to_int(leader_sequence+1, leader_sequence_size-1) * 10000;
     }
+}
+
+void toggle_nkro(void) {
+    #ifdef NKRO_ENABLE
+        clear_keyboard();
+        keymap_config.nkro = !keymap_config.nkro;
+        if (keymap_config.nkro) {
+            print("NKRO: on\n");
+        } else {
+            print("NKRO: off\n");
+        }
+    #endif
 }
 
 void keyboard_post_init_kb(void) {

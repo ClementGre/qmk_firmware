@@ -1,6 +1,7 @@
 #include "keycode_to_string.h"
 #include "quantum.h"
 #include "keymap_bepo.h"
+#include <math.h>
 
 /*LAYOUT(
 QK_BOOT, QK_LEAD, EE_CLR,                                                KC_MPRV, KC_MPLY, KC_MNXT,
@@ -137,3 +138,24 @@ char *keycode_to_string(uint16_t key) {
     }
     return "!";
 }
+
+uint8_t keycode_to_int(uint16_t key){
+    if(0x001D < key && key <= 0x0026){
+        return key - 0x001D;
+    }else return 0;
+}
+uint32_t keycodes_to_int(uint16_t *keys, int size){
+    uint32_t result = 0;
+    for (int i = 0; i < size; i++) {
+        if(keys[i] != 0){
+            result += ((uint32_t) keycode_to_int(keys[i])) * (uint32_t) pow(10, (size - i - 1));
+        }
+    }
+	print("Keycodes to int: ");
+	char str[6];
+	sprintf(str, PRId32, result);
+	print(str);
+	print("\n");
+    return result;
+}
+
