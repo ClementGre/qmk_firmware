@@ -458,10 +458,15 @@ void render_screen_1(void) {
             oled_write(false, " ", false);
 
         led_t led_state = host_keyboard_led_state();
+        #ifdef CAPS_WORD_ENABLE
         if (is_caps_word_on())
             print_4chars_icon(0x97, 3, 2);
         else
             empty_4chars_icon(3, 2);
+        #else
+        empty_4chars_icon(3, 2);
+        #endif
+
         if (led_state.caps_lock)
             print_4chars_icon(0x95, 5, 2);
         else
@@ -475,8 +480,10 @@ void render_screen_1(void) {
         else
             empty_4chars_icon(9, 2);
     }
-
-    uint8_t wpm = get_current_wpm();
+    uint8_t wpm = 0;
+    #ifdef WPM_ENABLE
+    wpm = get_current_wpm();
+    #endif
     oled_set_cursor(false, wpm < 10 ? 14 : (wpm < 100 ? 13 : 12), inverted ? 3 : 2);
     char wpm_str[10];
     snprintf(wpm_str, 10, "  %d wpm", wpm);

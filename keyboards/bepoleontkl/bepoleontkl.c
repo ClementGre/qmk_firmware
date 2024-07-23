@@ -186,7 +186,7 @@ bool encoder_update_kb(uint8_t index, bool clockwise) {
     return true;
 }
 
-void raw_hid_receive(uint8_t *data, uint8_t length) {
+/*void raw_hid_receive(uint8_t *data, uint8_t length) {
     // [0] : 0x00 = Screen1, 0x01 = Spotify with song title, 0x02 = Spotify with singer, 0x03 = Perfs
     if (data[0] == 0x01 || data[0] == 0x02) {
         render_spotify(data);
@@ -195,7 +195,7 @@ void raw_hid_receive(uint8_t *data, uint8_t length) {
     } else {
         render_screen_1();
     }
-}
+}*/
 void send_spotify_control_command(uint8_t command_id) {
     // 0 : like, 1 : next, 2 : previous, 3 : play/pause
     uint8_t data[32];
