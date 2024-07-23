@@ -20,4 +20,5 @@ VIA_ENABLE = yes
 SRC += oled.c
 SRC += keycode_to_string.c
 
+
 LTO_ENABLE = yes
