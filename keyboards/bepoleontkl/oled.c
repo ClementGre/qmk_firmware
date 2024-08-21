@@ -195,7 +195,7 @@ void render_perfs(uint8_t *data) {
     if (cpu_graph_index == 62) {
         oled_pan(true, true);
         oled_pan(true, true);
-        for (int i = 0; i <= cpu_graph_index; ++i) {
+        for (int i = 0; i < cpu_graph_index; ++i) {
             cpu_graph[i] = cpu_graph[i + 1];
         }
     }
@@ -251,7 +251,6 @@ void render_perfs(uint8_t *data) {
     if (last_call_count < 62) {
         last_call_count += 1;
     }
-
     if (cpu_graph_index < 62) {
         cpu_graph_index += 1;
     }
@@ -300,15 +299,6 @@ void render_perfs(uint8_t *data) {
     char ram_str4[7];
     sprintf(ram_str4, "%d GB", data[8]);
     oled_write(true, ram_str4, false);
-
-    oled_set_cursor(true, 11, invert_pos ? 2 : 0);
-    char str1[6];
-    sprintf(str1, "%d", cpu_graph_max);
-    oled_write(true, str1, false);
-    oled_set_cursor(true, 11, invert_pos ? 3 : 1);
-    char str2[6];
-    sprintf(str2, "%d", cpu_graph_min);
-    oled_write(true, str2, false);
 }
 
 void print_4chars_icon(uint8_t root, uint8_t x, uint8_t y) {
