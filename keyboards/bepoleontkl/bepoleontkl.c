@@ -54,6 +54,14 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
                         set_mods(mods);
                     }
                     return false;
+                }else if (detected_host_os() == OS_MACOS) {
+                     // Perform Cmd + Option + Q instead to lock the screen
+                     if (record->event.pressed) {
+                        set_mods(MOD_BIT(KC_LGUI) | MOD_BIT(KC_LALT));
+                        tap_code(KC_Q);
+                        set_mods(mods);
+                    }
+                    return false;
                 }
             }
             break;
@@ -107,6 +115,46 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
                 return false;
             }
             break;
+        case KC_LALT: // Invert Alt and Meta on MacOS
+            if (detected_host_os() == OS_MACOS) {
+                if (record->event.pressed) {
+                    register_code(KC_LGUI);
+                } else {
+                    unregister_code(KC_LGUI);
+                }
+                return false;
+            }
+            break;
+        case KC_LGUI: // Invert Alt and Meta on MacOS
+            if (detected_host_os() == OS_MACOS) {
+                if (record->event.pressed) {
+                    register_code(KC_LALT);
+                } else {
+                    unregister_code(KC_LALT);
+                }
+                return false;
+            }
+            break;
+        case KC_RALT: // Invert Alt and Meta on MacOS
+            if (detected_host_os() == OS_MACOS) {
+                if (record->event.pressed) {
+                    register_code(KC_RGUI);
+                } else {
+                    unregister_code(KC_RGUI);
+                }
+                return false;
+            }
+            break;
+        case KC_RGUI: // Invert Alt and Meta on MacOS
+            if (detected_host_os() == OS_MACOS) {
+                if (record->event.pressed) {
+                    register_code(KC_RALT);
+                } else {
+                    unregister_code(KC_RALT);
+                }
+                return false;
+            }
+            break;
     }
 
 #ifdef CONSOLE_ENABLE
@@ -131,20 +179,29 @@ void suspend_wakeup_init_kb(void) {
     oled_wakeup();
 }
 
-
-
 void encoder_up(void) {
+    // log detected host OS
     if (get_mods() & MOD_MASK_SHIFT) {
         brightness_up();
     } else if (get_mods() & MOD_MASK_CTRL) {
-        if(detected_host_os() == OS_WINDOWS){
+        if(detected_host_os() == OS_WINDOWS){ // Use custom shortcut for Windows : Ctrl+Shift+PgUp/PgDn
             set_mods(MOD_BIT(KC_LCTL) | MOD_BIT(KC_LSFT));
             tap_code(KC_PGUP);
+            set_mods(mods);
+        }else if(detected_host_os() == OS_MACOS) { // Use Option + Shift mods for granular contol on MacOS
+            set_mods(MOD_BIT(KC_LALT) | MOD_BIT(KC_LSFT));
+            tap_code(KC_BRIU);
             set_mods(mods);
         }else
             tap_code(KC_BRIU);
     } else {
-        tap_code(KC_VOLU);
+        if(detected_host_os() == OS_MACOS) { // Use Option + Shift mods for granular contol on MacOS
+            set_mods(MOD_BIT(KC_LALT) | MOD_BIT(KC_LSFT));
+            tap_code(KC_VOLU);
+            set_mods(mods);
+        }else{
+            tap_code(KC_VOLU);
+        }
     }
 }
 void encoder_down(void) {
@@ -155,10 +212,20 @@ void encoder_down(void) {
             set_mods(MOD_BIT(KC_LCTL) | MOD_BIT(KC_LSFT));
             tap_code(KC_PGDN);
             set_mods(mods);
+        }else if(detected_host_os() == OS_MACOS) { // Use Option + Shift mods for granular contol on MacOS
+            set_mods(MOD_BIT(KC_LALT) | MOD_BIT(KC_LSFT));
+            tap_code(KC_BRID);
+            set_mods(mods);
         }else
             tap_code(KC_BRID);
     } else {
-        tap_code(KC_VOLD);
+        if(detected_host_os() == OS_MACOS) { // Use Option + Shift mods for granular contol on MacOS
+            set_mods(MOD_BIT(KC_LALT) | MOD_BIT(KC_LSFT));
+            tap_code(KC_VOLD);
+            set_mods(mods);
+        }else{
+            tap_code(KC_VOLD);
+        }
     }
 }
 bool skip_encoder0 = false;
